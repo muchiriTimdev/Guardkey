@@ -1,0 +1,26 @@
+rules:
+  - id: guardkey-stripe-secret-key
+    patterns:
+      - pattern-regex: 'sk_live_[0-9a-zA-Z]{24,}'
+    message: Stripe live secret key found in $FILE. This key can charge cards and access sensitive payment data. Rotate immediately and use environment variables.
+    languages: [generic]
+    severity: ERROR
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ❌ DON'T: hardcode Stripe keys
+        ✅ DO: Use environment variables
+        Example: os.environ.get('STRIPE_SECRET_KEY')
+
+  - id: guardkey-stripe-publishable-key
+    patterns:
+      - pattern-regex: 'pk_live_[0-9a-zA-Z]{24,}'
+    message: Stripe live publishable key found in $FILE. While less sensitive, this should still be in environment variables.
+    languages: [generic]
+    severity: WARNING
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ✅ Use environment variables for all Stripe keys

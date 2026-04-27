@@ -1,0 +1,25 @@
+rules:
+  - id: guardkey-github-personal-token
+    patterns:
+      - pattern-regex: 'ghp_[a-zA-Z0-9]{36}'
+    message: GitHub personal access token found in $FILE. This token grants access to your GitHub account. Rotate immediately.
+    languages: [generic]
+    severity: ERROR
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ❌ DON'T: hardcode GitHub tokens
+        ✅ DO: Use GitHub Secrets or environment variables
+
+  - id: guardkey-github-oauth-token
+    patterns:
+      - pattern-regex: 'gho_[a-zA-Z0-9]{36}'
+    message: GitHub OAuth token found in $FILE. Rotate immediately and use secure storage.
+    languages: [generic]
+    severity: ERROR
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ✅ Use GitHub Secrets Actions for CI/CD

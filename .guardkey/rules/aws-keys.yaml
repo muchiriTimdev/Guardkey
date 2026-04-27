@@ -1,0 +1,14 @@
+rules:
+  - id: guardkey-aws-access-key
+    patterns:
+      - pattern-regex: '(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'
+    message: AWS Access Key ID found in $FILE. This key grants programmatic access to your AWS account. Rotate this key immediately and use environment variables instead.
+    languages: [generic]
+    severity: ERROR
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ❌ DON'T: hardcode keys in source code
+        ✅ DO: Use environment variables
+        Example: os.environ.get('AWS_ACCESS_KEY_ID')

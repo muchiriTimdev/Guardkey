@@ -1,0 +1,28 @@
+rules:
+  - id: guardkey-api-key-generic
+    patterns:
+      - pattern-regex: '(?i)(api[_-]?key|apikey|secret[_-]?key)["''\s]*[:=]["''\s]*[a-zA-Z0-9_\-]{20,}'
+    message: Potential API key or secret found in $FILE. This pattern matches generic API key assignments. Verify if this is a real secret.
+    languages: [generic]
+    severity: WARNING
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        ⚠️ Review this carefully - may be a false positive
+        ✅ If real: Move to environment variables
+        ✅ If not: Add to .guardkey/ignore
+
+  - id: guardkey-private-key
+    patterns:
+      - pattern-regex: '-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----'
+    message: Private key file content found in source code. This is a critical security vulnerability.
+    languages: [generic]
+    severity: ERROR
+    metadata:
+      owasp: A02:2021
+      category: secrets
+      remediation: |
+        🚨 CRITICAL: Private keys should never be in source code
+        ✅ Store in .pem files outside repo
+        ✅ Use key management services (AWS KMS, etc.)

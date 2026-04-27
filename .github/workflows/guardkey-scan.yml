@@ -1,0 +1,82 @@
+name: GuardKey Secret Scan
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+  push:
+    branches: [ main, master, develop ]
+
+jobs:
+  secret-scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Install Semgrep
+        run: |
+          pip install semgrep
+      
+      - name: Run GuardKey Scan
+        run: |
+          semgrep --config .guardkey/rules/ --json --output guardkey-findings.json . || true
+      
+      - name: Parse Results
+        id: parse
+        run: |
+          if [ -f guardkey-findings.json ]; then
+            FINDINGS=$(python -c "import json; f=open('guardkey-findings.json'); data=json.load(f); print(len(data.get('results', [])))")
+            echo "count=$FINDINGS" >> $GITHUB_OUTPUT
+            echo "Found $FINDINGS potential secret(s)"
+          else
+            echo "count=0" >> $GITHUB_OUTPUT
+            echo "No findings file generated"
+          fi
+      
+      - name: Generate Educational Report
+        if: steps.parse.outputs.count != '0'
+        run: |
+          python guardkey/report.py --findings-file guardkey-findings.json > guardkey-report.md
+      
+      - name: Comment PR with Report
+        if: github.event_name == 'pull_request' && steps.parse.outputs.count != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('guardkey-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+      
+      - name: Fail on Critical Findings
+        if: steps.parse.outputs.count != '0'
+        run: |
+          python -c "
+          import json
+          with open('guardkey-findings.json') as f:
+              data = json.load(f)
+              critical = [r for r in data.get('results', []) if r.get('extra', {}).get('severity') == 'ERROR']
+              if critical:
+                  print(f'❌ {len(critical)} critical secret(s) found. Blocking PR.')
+                  exit(1)
+              else:
+                  print('⚠️ Warnings found but no critical secrets. Allowing with review.')
+          "
+      
+      - name: Upload Findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardkey-findings
+          path: |
+            guardkey-findings.json
+            guardkey-report.md
+          retention-days: 30
