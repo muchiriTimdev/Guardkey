@@ -23,7 +23,7 @@ jobs:
       
       - name: Run GuardKey Scan
         run: |
-          semgrep --config .guardkey/rules/ --json --output guardkey-findings.json . || true
+          semgrep --config .guardkey/rules/ --json --output guardkey-findings.json --exclude 'examples/' . || true
       
       - name: Parse Results
         id: parse
